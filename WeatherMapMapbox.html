@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Display a map with a custom style</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+        <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.1.1/mapbox-gl-geocoder.min.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.1.1/mapbox-gl-geocoder.css' type='text/css' />
+    <link rel="stylesheet" type="text/css" href="//ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/resources/dojo.css"> 
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dijit/themes/soria/soria.css">
+      <link rel='shortcut icon' href='path/to/favicon.ico' type='image/x-icon' />
+  <link href='https://www.mapbox.com/base/latest/base.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+        #holder
+        {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        th, td, tbody
+        {
+            padding: 15px !important;
+            text-align: center;
+        }
+        #wxButton
+        {
+            position: absolute;
+            bottom: 35px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body class="soria">
+    <!-- load Dojo -->
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/dojo.js"
+            data-dojo-config="async: true"></script>
+
+<div id='map'></div>
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiY3Blc2FrIiwiYSI6ImNqbm02Y3hobjAweDMzcW1ibmR2N2wyYXgifQ.ydg4DGF7kw4hwVFQq9zO4w';
+    var map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/cpesak/cjtzt0xqc0kmg1fnwc1eiobsh',
+center: [-97.452500, 29.501600], //hosted style id
+        center: [-77.38, 39], // starting position
+        zoom: 3 // starting zoom
+    });
+    map.addControl(new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken
+    }));
+    map.addControl(new mapboxgl.NavigationControl());
+    map.addControl(new mapboxgl.GeolocateControl({
+        positionOptions: {
+            enableHighAccuracy: true
+        },
+        trackUserLocation: true
+    }));
+    map.addControl(new mapboxgl.FullscreenControl());
+    map.addControl(new mapboxgl.ScaleControl({
+        maxWidth: 80,
+        unit: 'imperial'
+    }));
+    var wxURL;
+    var weatherBox;
+    require(["dijit/TitlePane",
+        "dojo/dom",
+        "dojo/on",
+        "dijit/Dialog",
+        "dijit/layout/ContentPane",
+        "dojo/domReady!"],
+        function (TitlePane, dom, on, Dialog) {
+            var tp = new TitlePane({
+                title: "Basemap Gallery",
+                content: dom.byId("bg"),
+                open: false
+            });
+            dom.byId("holder").appendChild(tp.domNode);
+            tp.startup();
+            weatherBox = new Dialog({
+                title: "Current Weather",
+                style: "width: auto; height:auto;"
+            });
+        });
+    function changeBasemap(basemapType) {
+        switch (basemapType) {
+            case streets:
+                map.setStyle('mapbox://styles/mapbox/streets-v9');
+                break;
+            case hybrid:
+                map.setStyle('mapbox://styles/kcchris/cj1xm4m1y00002snxi2adrj8n');
+                break;
+            case swtor:
+                map.setStyle('mapbox://styles/kcchris/cjfa02mvm69ok2tmv5dyb6xwy');
+                break;
+        }
+    }
+    function getCoords() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(getWeather);
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+    function getWeather(coords) {
+        var lat = coords.coords.latitude;
+        var long = coords.coords.longitude;
+        var nwsURL = 'https://forecast.weather.gov/MapClick.php?'
+        wxURL = nwsURL + 'lat=' + lat + '&lon=' + long;
+        map.flyTo({
+            center: [long, lat],
+            zoom: 14
+        });
+        weatherBox.setContent('<iframe width=600px; height=550px; src=' + wxURL + '></iframe>');
+        weatherBox.show();
+    }
+</script>
+<div id="holder"></div>
+    <a id="wxButton" href='#' class='button icon cloud' onclick="getCoords();"></a>
+ <div id="bg" data-dojo-type="dijit/layout/ContentPane">
+    <table style="width:100%">
+  <tbody>
+    <td id="streets" onclick="changeBasemap(streets)"><img width="120" height="80" src="/images/streets.png" alt="Mapbox Streets"> <p class="baseName">Mapbox Streets</p></td>
+    <td id="hybrid" onclick="changeBasemap(hybrid)"><img width="120" height="80"src="/images/hybrid.jpg" alt="Mapbox Hybrid"><p class="baseName">Mapbox Hybrid</p></td>
+    <td id="swtor" onclick="changeBasemap(swtor)"><img width="120" height="80" src="/images/SWTOR.PNG" alt="Custom Map"><p class="baseName">SWTOR Ilum (Custom)</p></td>
+  </tbody>
+</table>
+</div>
+
+</body>
+</html>
